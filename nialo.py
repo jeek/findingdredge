@@ -119,39 +119,72 @@ def probn(decksize, copies, minC, maxC, hand):
         #omitted cause I'm lazy
     return res
 
-def deckCheck(deck):
-    counter = 0
-    mins = [1,0,0,0,0,0,0,0]
-    hand = list(mins)
+def deckCheck(deck, goodHands):
+    timer1 = time.clock()
+    maxZeros = 0
+    for hand in goodHands:
+        maxZeros = max(maxZeros,hand.count(0))
+    l = len(goodHands[0])
+    #check if deck is even plausible
+    check = 0
+    if (deck.count(0) > maxZeros):
+        return 0
+    for goodHand in goodHands:
+        good = 1
+        for i in range(l):
+            if (deck[i]) < goodHand[i]:
+                good = 0
+                break
+        if (good == 1):
+            check = 1
+            break
+    if(check == 0):
+        return 0
+    #end sanity check
     mulledTo = 1
     final = 0
-    goodHands =[[2, 1, 1, 0, 0, 0, 0, 0],[1, 1, 1, 0, 0, 0, 0, 1],[1, 0, 1, 0, 1, 0, 0, 1],[1, 0, 1, 0, 0, 1, 0, 1],[1, 1, 0, 1, 0, 0, 0, 1],[1, 0, 0, 1, 1, 0, 0, 1],[1, 0, 0, 1, 0, 1, 0, 1],[1, 0, 0, 1, 0, 0, 1, 1],[1, 2, 0, 0, 0, 0, 0, 1],[1, 1, 0, 0, 0, 1, 0, 1],[1, 1, 0, 0, 0, 0, 1, 1],[1, 1, 0, 0, 1, 0, 0, 1],[1, 0, 0, 0, 2, 0, 0, 1],[1, 0, 0, 0, 1, 1, 0, 1],[1, 0, 0, 0, 1, 0, 1, 1],[1, 0, 0, 0, 1, 0, 2, 0],[1, 0, 0, 0, 2, 0, 1, 0],[1, 0, 0, 0, 1, 1, 1, 0]]
+    timer2 = 0
     for h in [7, 6, 5, 4]:
         p = 0
-        looping = 1
-        while(looping == 1):
-            #check if hand is 'good'
-            for goodHand in goodHands:
-                good = 1
-                for i in range(8):
-                    if (hand[i] < goodHand[i]):
-                        good = 0
-						break
-                if (good == 1):
-                    p = p + probn(60,deck,hand,hand,h)
-                    break
-            #looping logic
-            for j in range(8):
-                if ((hand[j] == deck[j]) or (sum(hand) == h)):
-                        hand[j] = mins[j]
-                        if(j == 7):
-                            looping = 0
+        for triedCount in range(len(goodHands)):
+            mins = goodHands[triedCount]
+            hand = list(mins)
+            looping = 1
+            while(looping == 1):
+                if (triedCount > 0):
+                #check if hand has already been tried
+                    tried = 0
+                    for j in range(triedCount):
+                        match = 1
+                        for i in range(l):
+                            if (hand[i] < goodHands[j][i]):
+                                match = 0
+                                break
+                        if (match == 1):
+                            tried = 1
+                            break
+                    if (tried == 0):
+                        timer1 = time.clock()
+                        p = p + probn(60,deck,hand,hand,h)
+                        timer2 = timer2 + time.clock() - timer1
                 else:
-                    hand[j] += 1
-                    break
+                    timer1 = time.clock()
+                    p = p + probn(60,deck,hand,hand,h)
+                    timer2 = timer2 + time.clock() - timer1
+                #looping logic
+                for k in range(l):
+                    if ((hand[k] == deck[k]) or (sum(hand) == h)):
+                        hand[k] = mins[k]
+                        if(k == (l-1)):
+                            looping = 0
+                    else:
+                        hand[k] += 1
+                        break
+
         final = final + mulledTo * p
         mulledTo = 1 - final
-    return final
+    timer2 = timer2 + time.clock() - timer1
+    return final, timer2
 
 def decks(mini = 12, maxi = 14):
     for a in ranged(5, 12):
